@@ -22,7 +22,8 @@ import (
 type options struct {
 	Verbose bool     `help:"Verbose printing."`
 	About   bool     `help:"Show about."`
-	MHTML   []string `arg:"" optional:""`
+	Output  string   `short:"o" help:"Output file (default: stdout)."`
+	MHTML   []string `arg:"" optional:"" help:"Input MHTML files (*.mht, *.mhtml)."`
 }
 
 type MHTMLToHTML struct {
@@ -32,7 +33,7 @@ type MHTMLToHTML struct {
 func (h *MHTMLToHTML) Run() (err error) {
 	kong.Parse(h,
 		kong.Name("mhtml-to-html"),
-		kong.Description("This command line converts .mhtml file to .html file"),
+		kong.Description("Convert MHTML files to HTML (outputs to stdout by default)."),
 		kong.UsageOnError(),
 	)
 	if h.About {
@@ -46,7 +47,15 @@ func (h *MHTMLToHTML) Run() (err error) {
 		}
 	}
 	if len(h.MHTML) == 0 {
-		return errors.New("no mht files given")
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] <input.mht|input.mhtml>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
+		fmt.Fprintf(os.Stderr, "  %s file.mht                    # Output HTML to stdout\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s file.mht -o output.html     # Save HTML to file\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s --help                      # Show all options\n", os.Args[0])
+		return errors.New("no input files specified")
+	}
+	if h.Output == "" && len(h.MHTML) > 1 {
+		return errors.New("cannot output multiple files to stdout (use -o to specify output file)")
 	}
 	for _, mht := range h.MHTML {
 		if h.Verbose {
@@ -132,8 +141,13 @@ func (h *MHTMLToHTML) process(mht string) error {
 	if err != nil {
 		return err
 	}
-	target := strings.TrimSuffix(mht, filepath.Ext(mht)) + ".html"
-	return os.WriteFile(target, []byte(txt), 0766)
+	
+	if h.Output == "" {
+		fmt.Print(txt)
+		return nil
+	}
+	
+	return os.WriteFile(h.Output, []byte(txt), 0766)
 }
 func (h *MHTMLToHTML) changeRef(e *goquery.Selection, saves map[string]string) {
 	attr := "src"

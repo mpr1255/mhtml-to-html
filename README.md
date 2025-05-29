@@ -11,15 +11,36 @@ This command line converts .mhtml to .html
 ```
 
 ### Usage
+
+By default, `mhtml-to-html` outputs HTML to stdout (like `pdftotext`):
+
 ```shell
-> mhtml-to-html *.mht
+# Extract HTML content to stdout
+> mhtml-to-html document.mht
+
+# Save HTML to a specific file
+> mhtml-to-html document.mht -o output.html
+
+# Process with verbose output
+> mhtml-to-html document.mhtml --verbose -o converted.html
 ```
+
+#### Flags
+```
+  -h, --help              Show context-sensitive help.
+  -o, --output=STRING     Output file (default: stdout).
+      --verbose           Verbose printing.
+      --about             Show about.
+```
+
+#### Examples
 ```shell
-> mhtml-to-html *.mhtml
-```
-```
-Flags:
-  -h, --help       Show context-sensitive help.
-      --verbose    Verbose printing.
-      --about      Show about.
+# Extract text content to terminal
+> mhtml-to-html email.mht
+
+# Save converted HTML file
+> mhtml-to-html email.mht -o email.html
+
+# Pipe output to other tools
+> mhtml-to-html document.mht | grep "important text"
 ```
