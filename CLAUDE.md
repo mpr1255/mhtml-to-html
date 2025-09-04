@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Build and Test
 - Build: `go build -v ./...`
 - Test: `go test -v ./...`
-- Install: `go get github.com/gonejack/mhtml-to-html`
+- Install: `go install github.com/mpr1255/mhtml-to-html@latest`
 
 ### Usage
 - Run the tool: `go run main.go *.mht` or `go run main.go *.mhtml`
