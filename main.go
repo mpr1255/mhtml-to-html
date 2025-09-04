@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/gonejack/mhtml-to-html/cmd"
+	"github.com/mpr1255/mhtml-to-html/cmd"
 )
 
 func main() {

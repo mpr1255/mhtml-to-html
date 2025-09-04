@@ -37,7 +37,7 @@ func (h *MHTMLToHTML) Run() (err error) {
 		kong.UsageOnError(),
 	)
 	if h.About {
-		fmt.Println("Visit https://github.com/gonejack/mhtml-to-html")
+		fmt.Println("Visit https://github.com/mpr1255/mhtml-to-html")
 		return
 	}
 	if len(h.MHTML) == 0 {
