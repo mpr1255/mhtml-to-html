@@ -12,14 +12,22 @@ This command line converts .mhtml to .html
 
 ### Usage
 
-By default, `mhtml-to-html` outputs HTML to stdout (like `pdftotext`):
+By default, `mhtml-to-html` outputs HTML to stdout (like `pdftotext`).
+
+**Output Behavior:**
+- **Stdout mode** (no `-o` flag): Images are stripped for clean text processing in pipelines
+- **File mode** (`-o` flag): Images and resources are preserved
+- **Extract files mode** (`--extract-files`): Creates `{filename}_files/` directory with external resources
 
 ```shell
-# Extract HTML content to stdout
+# Extract text content to stdout (images removed)
 > mhtml-to-html document.mht
 
-# Save HTML to a specific file
+# Save HTML to file (images preserved)
 > mhtml-to-html document.mht -o output.html
+
+# Extract with external resource files
+> mhtml-to-html document.mht -o output.html --extract-files
 
 # Process with verbose output
 > mhtml-to-html document.mhtml --verbose -o converted.html
@@ -28,19 +36,23 @@ By default, `mhtml-to-html` outputs HTML to stdout (like `pdftotext`):
 #### Flags
 ```
   -h, --help              Show context-sensitive help.
-  -o, --output=STRING     Output file (default: stdout).
       --verbose           Verbose printing.
       --version           Show version.
+      --extract-files     Extract resources to external files (default: embed as data URIs).
+  -o, --output=STRING     Output file (default: stdout).
 ```
 
 #### Examples
 ```shell
-# Extract text content to terminal
+# Extract text content to terminal (images stripped)
 > mhtml-to-html email.mht
 
-# Save converted HTML file
+# Save converted HTML file (images preserved)
 > mhtml-to-html email.mht -o email.html
 
-# Pipe output to other tools
+# Save with external resource files
+> mhtml-to-html email.mht -o email.html --extract-files
+
+# Pipe output to other tools (text processing)
 > mhtml-to-html document.mht | grep "important text"
 ```

@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Usage
 - Run the tool: `go run main.go *.mht` or `go run main.go *.mhtml`
 - Built binary usage: `mhtml-to-html *.mht`
-- Flags: `--verbose` for verbose output, `--version` for version info
+- Flags: `--verbose` for verbose output, `--version` for version info, `--extract-files` to create external resource files
 
 ## Architecture
 

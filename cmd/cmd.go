@@ -20,10 +20,11 @@ import (
 )
 
 type options struct {
-	Verbose bool     `help:"Verbose printing."`
-	Version bool     `help:"Show version."`
-	Output  string   `short:"o" help:"Output file (default: stdout)."`
-	MHTML   []string `arg:"" optional:"" help:"Input MHTML files (*.mht, *.mhtml)."`
+	Verbose     bool     `help:"Verbose printing."`
+	Version     bool     `help:"Show version."`
+	ExtractFiles bool    `help:"Extract resources to external files (default: embed as data URIs)."`
+	Output      string   `short:"o" help:"Output file (default: stdout)."`
+	MHTML       []string `arg:"" optional:"" help:"Input MHTML files (*.mht, *.mhtml)."`
 }
 
 type MHTMLToHTML struct {
@@ -37,7 +38,7 @@ func (h *MHTMLToHTML) Run() (err error) {
 		kong.UsageOnError(),
 	)
 	if h.Version {
-		fmt.Println("mhtml-to-html v1.0.2")
+		fmt.Println("mhtml-to-html v1.1.0")
 		fmt.Println("Visit https://github.com/mpr1255/mhtml-to-html")
 		return
 	}
@@ -93,8 +94,13 @@ func (h *MHTMLToHTML) processFile(mht string, output string) error {
 		return err
 	}
 	var html *part
-	var savedir = strings.TrimSuffix(mht, filepath.Ext(mht)) + "_files"
 	var saves = make(map[string]string)
+	
+	// For file output with --extract-files flag, prepare directory
+	var savedir string
+	if output != "" && h.ExtractFiles {
+		savedir = strings.TrimSuffix(mht, filepath.Ext(mht)) + "_files"
+	}
 	for idx, part := range parts {
 		contentType := part.header.Get("Content-Type")
 		if contentType == "" {
@@ -109,32 +115,36 @@ func (h *MHTMLToHTML) processFile(mht string, output string) error {
 			continue
 		}
 
-		ext := ".dat"
-		switch mimetype {
-		case mime.TypeByExtension(".jpg"):
-			ext = ".jpg"
-		default:
-			exts, err := mime.ExtensionsByType(mimetype)
-			if err != nil {
-				return err
+		// Only process external resources if extracting files
+		if savedir != "" {
+			ext := ".dat"
+			switch mimetype {
+			case mime.TypeByExtension(".jpg"):
+				ext = ".jpg"
+			default:
+				exts, err := mime.ExtensionsByType(mimetype)
+				if err != nil {
+					return err
+				}
+				if len(exts) > 0 {
+					ext = exts[0]
+				}
 			}
-			if len(exts) > 0 {
-				ext = exts[0]
-			}
-		}
 
-		dir := path.Join(savedir, mimetype)
-		err = os.MkdirAll(dir, 0766)
-		if err != nil {
-			return fmt.Errorf("cannot create dir %s: %s", dir, err)
+			dir := path.Join(savedir, mimetype)
+			err = os.MkdirAll(dir, 0766)
+			if err != nil {
+				return fmt.Errorf("cannot create dir %s: %s", dir, err)
+			}
+			file := path.Join(dir, fmt.Sprintf("%d%s", idx, ext))
+			err = os.WriteFile(file, part.body, 0766)
+			if err != nil {
+				return fmt.Errorf("cannot write file%s: %s", file, err)
+			}
+			ref := part.header.Get("Content-Location")
+			saves[ref] = file
 		}
-		file := path.Join(dir, fmt.Sprintf("%d%s", idx, ext))
-		err = os.WriteFile(file, part.body, 0766)
-		if err != nil {
-			return fmt.Errorf("cannot write file%s: %s", file, err)
-		}
-		ref := part.header.Get("Content-Location")
-		saves[ref] = file
+		// For stdout output, we'll strip these references in changeRef
 	}
 	if html == nil {
 		return errors.New("html not found")
@@ -144,9 +154,19 @@ func (h *MHTMLToHTML) processFile(mht string, output string) error {
 	if err != nil {
 		return err
 	}
-	doc.Find("img,link,script").Each(func(i int, e *goquery.Selection) {
-		h.changeRef(e, saves)
-	})
+	// Handle references based on output mode
+	if output == "" {
+		// For stdout, remove images entirely but keep other content
+		doc.Find("img").Remove()
+		doc.Find("link,script").Each(func(i int, e *goquery.Selection) {
+			h.changeRef(e, saves, false)
+		})
+	} else {
+		// For file output, process all references
+		doc.Find("img,link,script").Each(func(i int, e *goquery.Selection) {
+			h.changeRef(e, saves, h.ExtractFiles)
+		})
+	}
 	txt, err := doc.Html()
 	if err != nil {
 		return err
@@ -159,7 +179,7 @@ func (h *MHTMLToHTML) processFile(mht string, output string) error {
 	
 	return os.WriteFile(output, []byte(txt), 0766)
 }
-func (h *MHTMLToHTML) changeRef(e *goquery.Selection, saves map[string]string) {
+func (h *MHTMLToHTML) changeRef(e *goquery.Selection, saves map[string]string, hasExternalFiles bool) {
 	attr := "src"
 	switch e.Get(0).Data {
 	case "img":
@@ -172,6 +192,9 @@ func (h *MHTMLToHTML) changeRef(e *goquery.Selection, saves map[string]string) {
 	local, exist := saves[ref]
 	if exist {
 		e.SetAttr(attr, local)
+	} else if !hasExternalFiles {
+		// For stdout or embedded mode, remove broken references
+		e.RemoveAttr(attr)
 	}
 }
 
