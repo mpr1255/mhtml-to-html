@@ -54,20 +54,29 @@ func (h *MHTMLToHTML) Run() (err error) {
 		fmt.Fprintf(os.Stderr, "  %s --help                      # Show all options\n", os.Args[0])
 		return errors.New("no input files specified")
 	}
-	if h.Output == "" && len(h.MHTML) > 1 {
-		return errors.New("cannot output multiple files to stdout (use -o to specify output file)")
-	}
+	// Allow multiple files to stdout - they will be concatenated
 	for _, mht := range h.MHTML {
 		if h.Verbose {
 			log.Printf("processing %s", mht)
 		}
-		if e := h.process(mht); e != nil {
+		
+		// Determine output for this file
+		output := h.Output
+		if h.Output != "" && len(h.MHTML) > 1 {
+			// For multiple files with -o flag, generate unique filenames
+			ext := filepath.Ext(h.Output)
+			base := strings.TrimSuffix(h.Output, ext)
+			inputBase := strings.TrimSuffix(filepath.Base(mht), filepath.Ext(mht))
+			output = base + "_" + inputBase + ext
+		}
+		
+		if e := h.processFile(mht, output); e != nil {
 			return fmt.Errorf("parse %s failed: %s", mht, e)
 		}
 	}
 	return
 }
-func (h *MHTMLToHTML) process(mht string) error {
+func (h *MHTMLToHTML) processFile(mht string, output string) error {
 	fd, err := os.Open(mht)
 	if err != nil {
 		return err
@@ -142,12 +151,12 @@ func (h *MHTMLToHTML) process(mht string) error {
 		return err
 	}
 	
-	if h.Output == "" {
+	if output == "" {
 		fmt.Print(txt)
 		return nil
 	}
 	
-	return os.WriteFile(h.Output, []byte(txt), 0766)
+	return os.WriteFile(output, []byte(txt), 0766)
 }
 func (h *MHTMLToHTML) changeRef(e *goquery.Selection, saves map[string]string) {
 	attr := "src"
