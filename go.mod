@@ -1,4 +1,4 @@
-module github.com/gonejack/mhtml-to-html
+module github.com/mpr1255/mhtml-to-html
 
 go 1.20
 
