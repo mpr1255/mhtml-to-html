@@ -30,7 +30,7 @@ By default, `mhtml-to-html` outputs HTML to stdout (like `pdftotext`):
   -h, --help              Show context-sensitive help.
   -o, --output=STRING     Output file (default: stdout).
       --verbose           Verbose printing.
-      --about             Show about.
+      --version           Show version.
 ```
 
 #### Examples

@@ -21,7 +21,7 @@ import (
 
 type options struct {
 	Verbose bool     `help:"Verbose printing."`
-	About   bool     `help:"Show about."`
+	Version bool     `help:"Show version."`
 	Output  string   `short:"o" help:"Output file (default: stdout)."`
 	MHTML   []string `arg:"" optional:"" help:"Input MHTML files (*.mht, *.mhtml)."`
 }
@@ -36,7 +36,8 @@ func (h *MHTMLToHTML) Run() (err error) {
 		kong.Description("Convert MHTML files to HTML (outputs to stdout by default)."),
 		kong.UsageOnError(),
 	)
-	if h.About {
+	if h.Version {
+		fmt.Println("mhtml-to-html v1.0.2")
 		fmt.Println("Visit https://github.com/mpr1255/mhtml-to-html")
 		return
 	}
